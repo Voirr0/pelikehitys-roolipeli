@@ -1,8 +1,26 @@
 using UnityEngine;
 using UnityEngine.Rendering;
+using static DoorController;
 
 public class DoorController : MonoBehaviour
 {
+
+   public enum Oventila
+    {
+        auki,
+        kiinni,
+        lukossa
+    }
+
+   public enum Toiminnot
+    {
+        avaa,
+        sulje,
+        lukitse,
+        poistalukitus
+    }
+
+
     // Kuvat oven eri tiloille
     [SerializeField]
     Sprite ClosedDoorSprite;
@@ -28,6 +46,7 @@ public class DoorController : MonoBehaviour
     [SerializeField]
     int DebugFontSize = 32;
 
+    Oventila oven_tila;
 
     void Start()
     {
@@ -44,16 +63,39 @@ public class DoorController : MonoBehaviour
         openColor = new Color(0.5f, 0.8f, 1.0f);
 
 
-         // TODO
+        // TODO
+        oven_tila = Oventila.lukossa;
          // missä tilassa ovi on kun peli alkaa?
     }
 
     /// <summary>
     /// Oveen kohdistuu jokin toiminto joka muuttaa sen tilaa
     /// </summary>
-    public void ReceiveAction()
+    public void ReceiveAction(Toiminnot oven_toiminnot)
     {
-        
+        if (oven_toiminnot == Toiminnot.sulje && oven_tila == Oventila.auki)
+        {
+            oven_tila = Oventila.kiinni;
+            CloseDoor();
+        }
+
+        else if (oven_toiminnot == Toiminnot.avaa && oven_tila == Oventila.kiinni)
+        {
+            oven_tila = Oventila.auki;
+            OpenDoor();
+        }
+
+        else if (oven_toiminnot == Toiminnot.lukitse && oven_tila == Oventila.kiinni)
+        {
+            oven_tila = Oventila.lukossa;
+            LockDoor();
+        }
+
+        else if (oven_toiminnot == Toiminnot.poistalukitus && oven_tila == Oventila.lukossa)
+        {
+            oven_tila = Oventila.kiinni;
+            UnlockDoor();
+        }
     }
 
     // Kun tulee toiminto, sen perusteella kutsutaan jotakin
