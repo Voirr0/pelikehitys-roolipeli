@@ -6,11 +6,24 @@ public class PlayerController : MonoBehaviour
 {
     Vector2 lastMovement;
     Rigidbody2D rb;
-    [SerializeField]
-    float moveSpeed;
+
+    [SerializeField] float moveSpeed;
+
     DoorController activateDoor = null;
+
     GameObject DoorButtons;
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    GameObject DoorPanel;
+
+    //  PANEL ANIMATION
+    public RectTransform doorPanel;
+
+    public Vector2 hiddenPos = new Vector2(0, -600);
+    public Vector2 visiblePos = new Vector2(0, 0);
+
+    public float slideSpeed = 8f;
+    private bool isDoorUIOpen = false;
+
+    public float closeThreshold = 0.1f;
 
     void Start()
     {
@@ -31,61 +44,85 @@ public class PlayerController : MonoBehaviour
 
         DoorButtons = GameObject.Find("DoorButtons");
         DoorButtons.SetActive(false);
+
+        DoorPanel = GameObject.Find("DoorPanel");
+        DoorPanel.SetActive(false);
+
+        //  initialize animation
+        doorPanel.anchoredPosition = hiddenPos;
+        isDoorUIOpen = false;
     }
 
     void OnOpenButton()
     {
-        Debug.Log("Open button was pressed");
         activateDoor.ReceiveAction(DoorController.Toiminnot.avaa);
+
+        AudioManager.Instance.PlaySound(AudioManager.SoundEffect.OpenDoor);
     }
 
     void OnCloseButton()
     {
-        Debug.Log("Close button was pressed");
         activateDoor.ReceiveAction(DoorController.Toiminnot.sulje);
     }
 
     void OnLockButton()
     {
-        Debug.Log("Lock button was pressed");
         activateDoor.ReceiveAction(DoorController.Toiminnot.lukitse);
     }
 
     void OnOpenLockButton()
     {
-        Debug.Log("OpenLock button was pressed");
         activateDoor.ReceiveAction(DoorController.Toiminnot.poistalukitus);
     }
 
-    // Update is called once per frame
     void Update()
     {
-        
+        //  PANEL SLIDE ANIMATION
+        Vector2 target = isDoorUIOpen ? visiblePos : hiddenPos;
+
+        doorPanel.anchoredPosition = Vector2.Lerp(
+            doorPanel.anchoredPosition,
+            target,
+            Time.deltaTime * slideSpeed
+        );
+
+        // auto disable after sliding out
+        if (!isDoorUIOpen && DoorPanel.activeSelf)
+        {
+            float distance = Vector2.Distance(doorPanel.anchoredPosition, hiddenPos);
+
+            if (distance < closeThreshold)
+            {
+                DoorPanel.SetActive(false);
+                DoorButtons.SetActive(false);
+            }
+        }
     }
 
-    
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (!collision.collider.CompareTag("Door"))
+        {
+            AudioManager.Instance.PlaySound(AudioManager.SoundEffect.HitWall);
+        }
+    }
+
     private void FixedUpdate()
     {
-
         rb.MovePosition(rb.position + lastMovement * moveSpeed * Time.fixedDeltaTime);
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        // Huomaa mitä pelaaja löytää
         if (collision.CompareTag("Door"))
         {
-            Debug.Log("Found Door");
             activateDoor = collision.GetComponent<DoorController>();
 
+            DoorPanel.SetActive(true);
+            DoorButtons.SetActive(true);
 
-            //napit näkyviin
-            DoorButtons.SetActive(true);    
-
-        }
-        else if (collision.CompareTag("Merchant"))
-        {
-            Debug.Log("Found Merchant");
+            //  trigger slide in
+            isDoorUIOpen = true;
         }
     }
 
@@ -93,16 +130,14 @@ public class PlayerController : MonoBehaviour
     {
         if (collision.CompareTag("Door"))
         {
-            DoorButtons.SetActive(false);
+            //  trigger slide out
+            isDoorUIOpen = false;
         }
-            
     }
-
-
 
     void OnMoveAction(InputValue value)
     {
         Vector2 v = value.Get<Vector2>();
         lastMovement = v;
-    }    
+    }
 }

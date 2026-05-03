@@ -12,6 +12,8 @@ public class PlayerDataManager : MonoBehaviour
     private int health = 0;
     private int maxHealth = 20;
 
+    public int Money => money;
+
 
     public TMP_Text experienceText;
     public TMP_Text moneyText;
